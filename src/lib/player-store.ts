@@ -34,7 +34,7 @@ function set(next: Partial<PlayerState>) {
 }
 
 export function openPlayer(session: PlayerSession) {
-  muteDesktop(true);
+  // System audio stays on. Muting is an explicit user action in the panel.
   set({ session, minimized: false, buffering: false });
 }
 
@@ -44,6 +44,7 @@ export function updatePlayer(patch: Partial<PlayerSession>) {
 }
 
 export function closePlayer() {
+  // Always leave the machine unmuted when a session ends.
   muteDesktop(false);
   set({ session: null, minimized: false, buffering: false });
 }

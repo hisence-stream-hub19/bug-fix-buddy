@@ -340,8 +340,9 @@ function DeviceCard({
         ...(kbps || settings.captureKbps ? { kbps: kbps || settings.captureKbps } : {}),
         ...(selected.gop ? { gop: selected.gop } : {}),
         mode,
-        // No sound from the computer — the TV is the only speaker.
-        muteLocal: true,
+        // Keep the computer speakers alive; the user can mute them from the
+        // floating panel if they only want TV sound.
+        muteLocal: false,
         // Controls belong to the floating desktop panel, never burned into
         // the picture sent to the TV.
         panel: false,

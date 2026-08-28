@@ -19,6 +19,7 @@ import {
 } from "@/lib/ums-store";
 import { WEB_MODE_MESSAGE, getUms, type DeviceTarget } from "@/lib/ums-bridge";
 import { healthDotClass, healthTitle, useStreamHealth } from "@/lib/health";
+import { AnyviewButton } from "@/components/AnyviewButton";
 
 function deviceTarget(device: TvDevice): DeviceTarget {
   return device.protocol === "Cast"
@@ -390,6 +391,7 @@ function StreamVaultPage() {
               >
                 اشتراک روی تلویزیون
               </button>
+              <AnyviewButton device={devices.find((d) => d.id === selectedDevice)} compact />
             </li>
           ))}
         </ul>

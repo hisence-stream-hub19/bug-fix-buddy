@@ -779,7 +779,7 @@ function start(options = {}) {
         ? ""
         : "دستگاه صدای loopback در ویندوز پیدا نشد؛ اشتراک صفحه فقط با تصویر انجام می‌شود. برای داشتن صدا Stereo Mix را فعال کنید یا virtual-audio-capturer را نصب کنید.";
       // Sound must come from the TV only — silence the PC speakers while sharing.
-      if (options.muteLocal !== false) setLocalMute(true);
+      if (options.muteLocal === true) setLocalMute(true);
       return {
         ...last,
         audio: Boolean(state.audioDevice),

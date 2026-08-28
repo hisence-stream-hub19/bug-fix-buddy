@@ -16,6 +16,7 @@ import {
 import { openPlayer } from "@/lib/player-store";
 import { deviceLabel } from "@/lib/ums-store";
 import { WEB_MODE_MESSAGE, getUms, type DeviceTarget } from "@/lib/ums-bridge";
+import { AnyviewButton } from "@/components/AnyviewButton";
 
 function deviceTarget(device: TvDevice): DeviceTarget {
   if (device.protocol === "Cast") {
@@ -285,6 +286,7 @@ function DownloadPage() {
                   >
                     <Tv className="size-3.5" /> اشتراک روی تلویزیون
                   </button>
+                  <AnyviewButton device={devices.find((d) => d.id === selectedDevice)} compact />
                   <button
                     onClick={() => void cancel(j.id)}
                     aria-label="حذف"
