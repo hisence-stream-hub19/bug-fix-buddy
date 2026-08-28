@@ -277,3 +277,18 @@ input[type="range"]:active,
 [role="slider"]:active {
   cursor: grabbing;
 }
+
+/* Hide scrollbars app-wide while keeping mouse/touch scrolling fully functional. */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / legacy Edge */
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Chrome / Edge / Safari */
+}
+html,
+body {
+  overscroll-behavior-y: none;
+}
