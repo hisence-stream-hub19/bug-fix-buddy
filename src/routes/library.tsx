@@ -18,6 +18,7 @@ import {
 } from "@/lib/ums-store";
 import { WEB_MODE_MESSAGE, getUms, useDesktop, type DeviceTarget } from "@/lib/ums-bridge";
 import { healthDotClass, healthTitle, useStreamHealth } from "@/lib/health";
+import { AnyviewButton } from "@/components/AnyviewButton";
 
 /** Cast devices are addressed by ip:port, DLNA renderers by their SOAP URL. */
 function deviceTarget(device: TvDevice): DeviceTarget {
@@ -332,6 +333,7 @@ function LibraryPage() {
                   <Cast className="size-4" />
                   اشتراک روی تلویزیون
                 </button>
+                <AnyviewButton device={devices.find((d) => d.id === selectedDevice)} compact />
                 <button
                   onClick={() => void pickSubtitle(file.id)}
                   aria-label="انتخاب فایل زیرنویس"

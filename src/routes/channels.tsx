@@ -39,6 +39,7 @@ import { openInAppPlayer, openPlayer } from "@/lib/player-store";
 import { isLowPower } from "@/lib/perf";
 import { healthDotClass, healthTitle, useStreamHealth } from "@/lib/health";
 import { WEB_MODE_MESSAGE, getUms, useDesktop, type DeviceTarget } from "@/lib/ums-bridge";
+import { AnyviewButton } from "@/components/AnyviewButton";
 
 export const Route = createFileRoute("/channels")({
   head: () => ({
@@ -731,6 +732,7 @@ function ChannelsPage() {
                     >
                       اشتراک روی تلویزیون
                     </button>
+                    <AnyviewButton device={devices.find((d) => d.id === selectedDevice)} compact />
                   </li>
                 ))}
               </ul>

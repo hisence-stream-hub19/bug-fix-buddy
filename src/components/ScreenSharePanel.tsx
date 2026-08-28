@@ -53,7 +53,7 @@ export function ScreenSharePanel() {
   const [playing, setPlaying] = useState(true);
   const [volume, setVolume] = useState(35);
   const [tvMuted, setTvMuted] = useState(false);
-  const [pcMuted, setPcMuted] = useState(true);
+  const [pcMuted, setPcMuted] = useState(false);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
 
   const device = session?.live ? session.device : null;
@@ -190,7 +190,7 @@ export function ScreenSharePanel() {
       {collapsed ? null : (
         <div className="space-y-3 p-3">
           <p className="rounded-lg bg-secondary px-2 py-1.5 text-[11px] text-muted-foreground">
-            صدای رایانه {pcMuted ? "قطع است" : "روشن است"} و پخش فقط از تلویزیون شنیده می‌شود.
+            صدای رایانه {pcMuted ? "قطع است" : "روشن است"}؛ در صورت نیاز با دکمه بلندگو آن را قطع کنید.
           </p>
 
           <div className="flex items-center justify-between gap-1.5">
