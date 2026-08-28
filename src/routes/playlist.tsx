@@ -236,7 +236,7 @@ function Playlist() {
                     <Cast className="size-4" />
                     پخش روی تلویزیون
                   </button>
-                  <AnyviewButton device={devices.find((d) => d.id === selectedDevice)} compact />
+                  <AnyviewButton device={devices.find((d) => d.id === selectedId)} compact />
                   <button
                     onClick={() => void pickSubtitle(item.id)}
                     aria-label="انتخاب فایل زیرنویس"
