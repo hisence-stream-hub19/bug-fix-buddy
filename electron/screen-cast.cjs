@@ -23,7 +23,21 @@ const PRIMING_BYTES = 180_000; // TS bytes replayed to a freshly attached TV (de
 //   lightPanel drawtext is re-read once per second instead of every frame
 // A zero value means "let the automatic hardware profile decide".
 // ---------------------------------------------------------------------------
-const tuning = { fps: 0, kbps: 0, gop: 0, segmentMs: 1000, lightPanel: false, bufferMs: 700 };
+// muxKbps is the *transport* rate (not the picture quality): the MPEG-TS is
+// padded with null packets up to this rate. TVs (Hisense/Anyview, Samsung, LG)
+// pre-buffer a fixed number of BYTES before showing the first frame, so a
+// 2 Mbit/s stream made them wait ~30 s and then stay ~30 s behind the desktop.
+// Padding the transport to ~12 Mbit/s fills that byte buffer in a fraction of
+// a second, which is what removes the delay without touching video quality.
+const tuning = {
+  fps: 0,
+  kbps: 0,
+  gop: 0,
+  segmentMs: 1000,
+  lightPanel: false,
+  bufferMs: 300,
+  muxKbps: 12000,
+};
 
 function setTuning(next = {}) {
   const num = (v, min, max) => {
@@ -35,11 +49,12 @@ function setTuning(next = {}) {
   if ("gop" in next) tuning.gop = num(next.gop, 4, 120);
   if ("segmentMs" in next) tuning.segmentMs = num(next.segmentMs, 300, 4000) || 1000;
   if ("lightPanel" in next) tuning.lightPanel = Boolean(next.lightPanel);
+  if ("muxKbps" in next) tuning.muxKbps = num(next.muxKbps, 3000, 40000) || 12000;
   // Manual sync slider: how much already-muxed video a freshly attached TV
   // replays before it goes live. Lower = the TV is closer to the desktop.
   if ("bufferMs" in next) {
     const n = Math.round(Number(next.bufferMs) || 0);
-    tuning.bufferMs = Math.max(120, Math.min(6000, n || 700));
+    tuning.bufferMs = Math.max(120, Math.min(6000, n || 300));
   }
   return { ...tuning };
 }
@@ -50,9 +65,10 @@ function getTuning() {
 
 /** Prime buffer scaled to the chosen segment length (short chunk = low delay). */
 function primingBytes() {
-  const ms = tuning.bufferMs || tuning.segmentMs || 1000;
+  const ms = tuning.bufferMs || tuning.segmentMs || 300;
   return Math.max(24_000, Math.round((PRIMING_BYTES * ms) / 1000));
 }
+
 
 // Live control panel burned into the picture (drawtext reloads this file every
 // frame, so the app can change/hide it without restarting ffmpeg).
@@ -544,11 +560,19 @@ function captureArgs(options = {}) {
 
   const audio = audioInput(options);
   const hasAudio = audio.length > 0;
-  // Fixed, short GOP = short buffer chain on the TV. Manual value (8 / 15…)
-  // overrides the automatic half-second interval.
-  // A 30-frame GOP is broadly compatible with older DLNA decoders. Manual
-  // tuning may still shorten it for very low-latency local networks.
-  const gop = Math.max(4, Math.round(Number(options.gop) || tuning.gop || (isX264 ? 30 : fps)));
+  // Keyframe every ~0.5 s: a freshly attached TV can start decoding almost
+  // immediately and the buffer chain stays short. Manual value still wins.
+  const gop = Math.max(
+    4,
+    Math.round(Number(options.gop) || tuning.gop || Math.max(5, Math.round(fps / 2))),
+  );
+  // Transport (not picture) rate. Anyview Stream TVs pre-buffer even more, so
+  // they get a wider pad. The pad is discarded by the decoder — it only makes
+  // the TV's byte buffer fill instantly instead of over ~30 seconds.
+  const padKbps = options.mode === "anyview" ? 16000 : tuning.muxKbps || 12000;
+  const muxKbps = Math.max(Math.round((kbps + (hasAudio ? 160 : 0)) * 1.6), padKbps);
+
+
 
   return pruneArgs([
 
@@ -620,6 +644,13 @@ function captureArgs(options = {}) {
     "+resend_headers",
     "-pat_period",
     "0.1",
+    // Constant transport rate (null-packet padding): the TV's fixed byte
+    // pre-buffer fills at 12–16 Mbit/s instead of at the video bitrate, which
+    // is what removes the ~30 s startup wait and the ~30 s mouse lag.
+    "-muxrate",
+    `${muxKbps}k`,
+    "-pcr_period",
+    "20",
     "-muxdelay",
     "0",
     "-muxpreload",
@@ -627,6 +658,7 @@ function captureArgs(options = {}) {
     "-flush_packets",
     "1",
     "pipe:1",
+
   ]);
 
 }
@@ -855,6 +887,17 @@ function launch(options = {}) {
       state.rawError = "";
       return launch(options);
     }
+    // "muxrate is too low" (or an unsupported CBR pad): keep the share alive by
+    // muxing at the natural variable rate instead of failing.
+    if (!disabledOpts.has("muxrate") && /muxrate|VBV|bitrate is too low/i.test(chatter)) {
+      disabledOpts.add("muxrate");
+      disabledOpts.add("pcr_period");
+
+      state.lastError = "";
+      state.rawError = "";
+      return launch(options);
+    }
+
     // A drawtext/filter complaint is not a real capture failure: drop the
     // overlay and try once more so the screen still reaches the TV.
     if (!panelDisabled && /drawtext|No option|filter|AVFilter/i.test(chatter)) {

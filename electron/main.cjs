@@ -492,9 +492,12 @@ function registerIpc() {
     }
     // Show the logo on the TV immediately: capture + DLNA handshake take a few
     // seconds and a renderer with no bytes shows a black screen instead.
+    // Anyview Stream renderers start their own splash, so we skip ours there —
+    // a second handshake only adds startup delay.
     const base = `http://${ip}:${s.port}`;
+    const anyview = payload?.mode === "anyview";
     let splashAt = 0;
-    if (mediaState.settings.tvSplash !== false && splashCast.available()) {
+    if (!anyview && mediaState.settings.tvSplash !== false && splashCast.available()) {
       const okSplash = await sendToDevice(
         payload,
         `${base}/splash.ts`,
@@ -509,10 +512,12 @@ function registerIpc() {
       fps: payload?.fps,
       kbps: payload?.kbps,
       gop: payload?.gop,
+      mode: anyview ? "anyview" : "dlna",
       muteLocal: payload?.muteLocal,
       panel: payload?.panel,
       panelText: payload?.panelText,
     };
+
     let started = screen.start(startOpts);
     if (!started.ok) return started;
     // Never point the TV at a URL with no bytes yet — that is the black screen.
@@ -537,23 +542,27 @@ function registerIpc() {
       }
     }
 
-    const url = `${base}/desktop.ts`;
+    // Anyview Stream (Hisense/VIDAA) accepts the same MPEG-TS live stream but
+    // through its own endpoint, which it treats as a live TV source and starts
+    // with a much smaller pre-buffer.
+    const url = `${base}/${anyview ? "anyview.ts" : "desktop.ts"}`;
     // Keep the logo up until the real picture is actually ready, then swap.
     if (splashAt) await sleep(Math.max(0, 1200 - (Date.now() - splashAt)));
     const res = isCast(payload)
       ? await cast.play({
           ...castTarget(payload),
           url,
-          title: "صفحه دسکتاپ",
+          title: anyview ? "Anyview Stream — صفحه دسکتاپ" : "صفحه دسکتاپ",
           mime: "video/mp2t",
         })
       : await avt.play({
           controlUrl: payload?.controlUrl,
           url,
-          title: "صفحه دسکتاپ",
+          title: anyview ? "Anyview Stream — صفحه دسکتاپ" : "صفحه دسکتاپ",
           mime: "video/mp2t",
           live: true,
         });
+
     if (!res.ok) screen.stop();
     const st = screen.status();
     return {

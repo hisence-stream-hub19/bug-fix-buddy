@@ -53,7 +53,7 @@ export function ScreenSyncPanel() {
   const [open, setOpen] = useState(true);
   const [hidden, setHidden] = useState(false);
   const [metrics, setMetrics] = useState<ScreenMetrics | null>(null);
-  const [bufferMs, setBufferMs] = useState(700);
+  const [bufferMs, setBufferMs] = useState(300);
   const [fps, setFps] = useState(20);
   const [busy, setBusy] = useState(false);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
@@ -69,7 +69,7 @@ export function ScreenSyncPanel() {
       const m = await api.screenMetrics?.().catch(() => null);
       if (alive && m) {
         setMetrics(m);
-        setBufferMs((b) => (b === 700 && m.bufferMs ? m.bufferMs : b));
+        setBufferMs((b) => (m.bufferMs ? m.bufferMs : b));
         setFps((f) => (f === 20 && m.targetFps ? m.targetFps : f));
       }
     };
@@ -81,17 +81,21 @@ export function ScreenSyncPanel() {
     };
   }, [live, hidden]);
 
-  const apply = useCallback((patch: { bufferMs?: number; fps?: number; kbps?: number }) => {
-    if (applyTimer.current) clearTimeout(applyTimer.current);
-    applyTimer.current = setTimeout(async () => {
-      const api = getUms();
-      if (!api?.screenTune) return;
-      setBusy(true);
-      const res = await api.screenTune(patch).catch(() => ({ ok: false }));
-      setBusy(false);
-      if (!res?.ok) toast.error("تنظیم جدید اعمال نشد؛ دوباره تلاش کنید.");
-    }, 450);
-  }, []);
+  const apply = useCallback(
+    (patch: { bufferMs?: number; fps?: number; kbps?: number; muxKbps?: number }) => {
+      if (applyTimer.current) clearTimeout(applyTimer.current);
+      applyTimer.current = setTimeout(async () => {
+        const api = getUms();
+        if (!api?.screenTune) return;
+        setBusy(true);
+        const res = await api.screenTune(patch).catch(() => ({ ok: false }));
+        setBusy(false);
+        if (!res?.ok) toast.error("تنظیم جدید اعمال نشد؛ دوباره تلاش کنید.");
+      }, 450);
+    },
+    [],
+  );
+
 
   if (!live || hidden) return null;
 
@@ -116,7 +120,7 @@ export function ScreenSyncPanel() {
     const safeFps = metrics && metrics.capture < 80 ? 15 : 24;
     setBufferMs(300);
     setFps(safeFps);
-    apply({ bufferMs: 300, fps: safeFps });
+    apply({ bufferMs: 300, fps: safeFps, muxKbps: 16000 });
     toast.success("هماهنگ‌سازی خودکار اعمال شد؛ چند ثانیه صبر کنید.");
   };
 

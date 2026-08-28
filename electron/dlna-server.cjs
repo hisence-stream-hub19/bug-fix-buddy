@@ -525,7 +525,17 @@ function handle(req, res) {
   }
 
   // ------------------------------------------------ live desktop mirroring
-  if (p === "/desktop.ts" || p === "/desktop" || p.startsWith("/desktop/")) {
+  // /anyview.ts is the same live stream under the endpoint Anyview Stream
+  // (Hisense/VIDAA) renderers expect for a live source.
+  if (
+    p === "/desktop.ts" ||
+    p === "/desktop" ||
+    p.startsWith("/desktop/") ||
+    p === "/anyview.ts" ||
+    p === "/anyview" ||
+    p.startsWith("/anyview/")
+  ) {
+
     return screen.attach(req, res);
   }
 
