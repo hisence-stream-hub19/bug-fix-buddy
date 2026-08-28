@@ -318,7 +318,7 @@ function DeviceCard({
     toast.success("پخش متوقف شد.");
   };
 
-  const shareScreen = async () => {
+  const shareScreen = async (mode: "dlna" | "anyview" = "dlna") => {
     const api = getUms();
     if (!api) {
       toast.error(WEB_MODE_MESSAGE);
@@ -339,6 +339,7 @@ function DeviceCard({
         ...(fps || settings.captureFps ? { fps: fps || settings.captureFps } : {}),
         ...(kbps || settings.captureKbps ? { kbps: kbps || settings.captureKbps } : {}),
         ...(selected.gop ? { gop: selected.gop } : {}),
+        mode,
         // No sound from the computer — the TV is the only speaker.
         muteLocal: true,
         // Controls belong to the floating desktop panel, never burned into
@@ -350,13 +351,18 @@ function DeviceCard({
         return;
       }
       openPlayer({ device, title: "صفحه دسکتاپ", live: true });
-      toast.success(`صفحه دسکتاپ روی ${label} پخش می‌شود.`);
+      toast.success(
+        mode === "anyview"
+          ? `صفحه دسکتاپ با Anyview Stream روی ${label} پخش می‌شود.`
+          : `صفحه دسکتاپ روی ${label} پخش می‌شود.`,
+      );
       const note = (res as { note?: string }).note;
       if (note) toast.info(note);
     } finally {
       setSharing(false);
     }
   };
+
 
   return (
     <li className="rounded-xl border border-border bg-card p-5">
@@ -451,11 +457,22 @@ function DeviceCard({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => void shareScreen()}
+          onClick={() => void shareScreen("dlna")}
           disabled={sharing}
         >
           <MonitorUp className="size-3" /> {sharing ? "در حال شروع…" : "اشتراک صفحه دسکتاپ"}
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          title="اشتراک صفحه از مسیر Anyview Stream (هایسنس/VIDAA) با تأخیر کمتر"
+          onClick={() => void shareScreen("anyview")}
+          disabled={sharing}
+        >
+          <MonitorUp className="size-3" /> Anyview Stream
+        </Button>
+
         <Popover>
           <PopoverTrigger asChild>
             <Button

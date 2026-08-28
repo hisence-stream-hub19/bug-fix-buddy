@@ -44,8 +44,12 @@ try {
   Invoke-Checked 'cmd.exe' @('/d','/s','/c',$licenseCommand) 'Android SDK license acceptance failed'
   Invoke-Checked $manager @("--sdk_root=$sdk",'platform-tools',"platforms;android-$compile","build-tools;$buildTools") 'Android SDK package installation failed'
 
-  Write-Step '3/7 TanStack/Vite web build'
+  Write-Step '3/7 Screen-share source integrity and TanStack/Vite web build'
+  foreach($rel in @('src\components\ScreenSyncPanel.tsx','src\components\AppLayout.tsx','electron\dlna-server.cjs')){if(-not(Test-Path (Join-Path $Root $rel))){throw "Screen sharing source file is missing: $rel"}}
+  if((Get-Content (Join-Path $Root 'src\components\AppLayout.tsx') -Raw) -notmatch 'ScreenSyncPanel'){throw 'ScreenSyncPanel is not rendered in AppLayout.tsx.'}
+  if((Get-Content (Join-Path $Root 'electron\dlna-server.cjs') -Raw) -notmatch '/anyview\.ts'){throw 'Anyview Stream route is missing from dlna-server.cjs.'}
   $env:NITRO_PRESET='node-server';Invoke-Checked 'npm.cmd' @('run','build') 'Web build failed'
+
   if(-not $AppUrl){$AppUrl=if($env:UMS_APP_URL){$env:UMS_APP_URL}else{'http://10.0.2.2:5001'};Write-Host "App URL was not supplied; using $AppUrl (override with -AppUrl or UMS_APP_URL)."}
 
   Write-Step '4/7 Capacitor configuration'

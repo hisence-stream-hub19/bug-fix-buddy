@@ -35,8 +35,18 @@ try {
   }
   $ff=Join-Path $ResourcesDir 'ffmpeg.exe'; $fp=Join-Path $ResourcesDir 'ffprobe.exe'
   Invoke-Checked $ff @('-hide_banner','-version') 'ffmpeg validation failed'; Invoke-Checked $fp @('-hide_banner','-version') 'ffprobe validation failed'
-  $features=((& $ff -hide_banner -devices 2>&1)-join "`n")+((& $ff -hide_banner -encoders 2>&1)-join "`n")
+  $features=((& $ff -hide_banner -devices 2>&1)-join "`n")+((& $ff -hide_banner -encoders 2>&1)-join "`n")+((& $ff -hide_banner -muxers 2>&1)-join "`n")
   if($features -notmatch 'gdigrab' -or $features -notmatch 'libx264'){throw 'Downloaded ffmpeg lacks gdigrab or libx264.'}
+  if($features -notmatch 'mpegts'){throw 'Downloaded ffmpeg lacks the mpegts muxer required by desktop/Anyview sharing.'}
+  # Low-latency screen share and Anyview Stream depend on the constant-rate
+  # MPEG-TS pad (-muxrate/-pcr_period); prove this build accepts it.
+  $muxProbe=(& $ff -hide_banner -loglevel error -f lavfi -i 'testsrc=size=320x240:rate=10' -t 1 -c:v libx264 -preset ultrafast -b:v 1200k -f mpegts -muxrate 12000k -pcr_period 20 -y ([IO.Path]::Combine($env:TEMP,'ums-muxrate-probe.ts')) 2>&1)-join "`n"
+  if($LASTEXITCODE -ne 0){throw "ffmpeg rejected the low-latency MPEG-TS pad: $muxProbe"}
+  Remove-Item ([IO.Path]::Combine($env:TEMP,'ums-muxrate-probe.ts')) -Force -ErrorAction SilentlyContinue
+  foreach($rel in @('electron\screen-cast.cjs','electron\dlna-server.cjs','src\components\ScreenSyncPanel.tsx')){if(-not(Test-Path (Join-Path $Root $rel))){throw "Screen sharing source file is missing: $rel"}}
+  if((Get-Content (Join-Path $Root 'electron\dlna-server.cjs') -Raw) -notmatch '/anyview\.ts'){throw 'Anyview Stream route is missing from dlna-server.cjs.'}
+  if((Get-Content (Join-Path $Root 'src\components\AppLayout.tsx') -Raw) -notmatch 'ScreenSyncPanel'){throw 'ScreenSyncPanel is not rendered in AppLayout.tsx.'}
+
   $ytdlp=Join-Path $ResourcesDir 'yt-dlp.exe'; if(-not(Test-Path $ytdlp)){Invoke-Download -Uri @('https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe') -OutFile $ytdlp -TimeoutSec 300}; Invoke-Checked $ytdlp @('--version') 'yt-dlp validation failed'
   $audio=Join-Path $ResourcesDir 'Setup.Screen.Capturer.Recorder.exe'; if(-not(Test-Path $audio)){Invoke-Download -Uri @('https://github.com/rdp/screen-capture-recorder-to-video-windows-free/releases/download/v0.13.3/Setup.Screen.Capturer.Recorder.v0.13.3.exe') -OutFile $audio -TimeoutSec 300}
 

@@ -234,13 +234,15 @@ export type UmsApi = {
       fps?: number;
       kbps?: number;
       gop?: number;
+      /** "anyview" uses the Anyview Stream endpoint and a wider transport pad. */
+      mode?: "dlna" | "anyview";
       /** Silences the PC speakers so the sound only comes out of the TV. */
       muteLocal?: boolean;
       /** Burns the control-panel strip into the picture sent to the TV. */
       panel?: boolean;
       panelText?: string;
     },
-  ): Promise<SoapResult & { live?: boolean; localMuted?: boolean }>;
+  ): Promise<SoapResult & { live?: boolean; localMuted?: boolean; note?: string }>;
   stopScreenShare(p?: DeviceTarget): Promise<{ ok: boolean; running?: boolean }>;
   screenStatus(): Promise<ScreenStatus>;
   /** Desktop only: shows/hides/updates the panel drawn on the TV picture. */
@@ -257,7 +259,10 @@ export type UmsApi = {
     kbps?: number;
     gop?: number;
     bufferMs?: number;
+    /** MPEG-TS transport pad in kbit/s — the TV's byte pre-buffer filler. */
+    muxKbps?: number;
   }): Promise<{ ok: boolean; error?: string; tuning?: Record<string, number> }>;
+
   /** Desktop only: mutes/unmutes the computer speakers. */
   screenMuteLocal?(on: boolean): Promise<{ ok: boolean; muted?: boolean }>;
   /** Desktop only: sends a keystroke/media key to the focused desktop window. */

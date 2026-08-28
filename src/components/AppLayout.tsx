@@ -22,6 +22,7 @@ import { applyPerfClass } from "@/lib/perf";
 import { FloatingPlayer } from "@/components/FloatingPlayer";
 import { InAppPlayer } from "@/components/InAppPlayer";
 import { ScreenSharePanel } from "@/components/ScreenSharePanel";
+import { ScreenSyncPanel } from "@/components/ScreenSyncPanel";
 import { LinkCatcher } from "@/components/LinkCatcher";
 import { SystemPressureDialog } from "@/components/SystemPressureDialog";
 
@@ -134,6 +135,7 @@ export function AppLayout({
       </div>
       <FloatingPlayer />
       <ScreenSharePanel />
+      <ScreenSyncPanel />
       <SystemPressureDialog />
       <InAppPlayer />
       <LinkCatcher />
